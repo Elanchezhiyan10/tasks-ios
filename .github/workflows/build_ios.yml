@@ -1,7 +1,8 @@
+
 name: Build iOS IPA
 
 on:
-  workflow_dispatch: # Allows you to manually trigger the build from GitHub UI
+  workflow_dispatch:
   push:
     branches:
       - main
@@ -9,7 +10,7 @@ on:
 
 jobs:
   build:
-    name: Build iOS IPA
+    name: Build iOS IPA for Sideloadly
     runs-on: macos-14
 
     steps:
@@ -19,7 +20,7 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: 'stable'
+          channel: stable
           cache: true
 
       - name: Install Dependencies
@@ -30,17 +31,43 @@ jobs:
           gem install --no-document xcodeproj
           ruby ios/configure_widget.rb
 
-      - name: Build iOS Release (No Codesign)
+      - name: Build iOS Release
         run: flutter build ios --release --no-codesign
 
-      - name: Package into IPA
+      - name: Verify Widget Extension
+        shell: bash
+        run: |
+          APP="build/ios/iphoneos/Runner.app"
+          EXT="$APP/PlugIns/TaskWidgetExtension.appex"
+
+          if [ ! -d "$APP" ]; then
+            echo "ERROR: Runner.app not found"
+            exit 1
+          fi
+
+          if [ ! -d "$EXT" ]; then
+            echo "ERROR: Widget extension is missing"
+            echo "Check the Xcode project and configure_widget.rb"
+            exit 1
+          fi
+
+          echo "App bundle found"
+          echo "Widget extension found"
+          /usr/libexec/PlistBuddy \
+            -c "Print :CFBundleIdentifier" \
+            "$EXT/Info.plist"
+
+      - name: Package IPA for Sideloadly
+        shell: bash
         run: |
           mkdir -p build/ios/ipa/Payload
-          cp -r build/ios/iphoneos/Runner.app build/ios/ipa/Payload/
-          cd build/ios/ipa
-          zip -r -y flutter_pgi.ipa Payload
+          cp -R build/ios/iphoneos/Runner.app \
+            build/ios/ipa/Payload/
 
-      - name: Upload IPA as Artifact
+          cd build/ios/ipa
+          zip -qr -y flutter_pgi.ipa Payload
+
+      - name: Upload IPA Artifact
         uses: actions/upload-artifact@v4
         with:
           name: flutter_pgi_ipa
