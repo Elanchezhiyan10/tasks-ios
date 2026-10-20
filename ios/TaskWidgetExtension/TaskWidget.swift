@@ -53,7 +53,12 @@ struct TaskTimelineProvider: TimelineProvider {
                             let title = raw["title"] as? String ?? "Untitled task"
                             let priority = (raw["priority"] as? String ?? "medium").uppercased()
                             let scheduled = raw["scheduled_at"] as? String ?? ""
-                            items.append(TaskItem(title: title, priority: priority, scheduled_at: formatTime(scheduled)))
+                            // Skip expired tasks
+if let date = parseISODate(scheduled), date < Date() {
+    // expired, do not add
+} else {
+    items.append(TaskItem(title: title, priority: priority, scheduled_at: formatTime(scheduled)))
+}
                         }
                     }
 
@@ -100,11 +105,11 @@ struct TaskWidgetEntryView: View {
     @Environment(\.widgetFamily) var family
 
     var body: some View {
-        content
+        content.widgetURL(URL(string: "mytasks://dashboard")!)
             .widgetBackground(Color(red: 0.08, green: 0.11, blue: 0.15))
     }
 
-    var content: some View {
+    var content.widgetURL(URL(string: "mytasks://dashboard")!): some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Image(systemName: "checklist")

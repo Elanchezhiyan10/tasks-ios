@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'add_task_screen.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../main.dart' show notificationsPlugin;
@@ -33,6 +34,16 @@ class _TaskDashboardState extends State<TaskDashboard> {
   void initState() {
     super.initState();
     loadTasks();
+  }
+
+  Future<void> _logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('task_widget_token');
+    await prefs.remove('task_widget_full_name');
+    await prefs.remove('task_widget_base_url');
+    await prefs.remove('task_widget_tasks');
+    if (!mounted) return;
+    Navigator.of(context).pushNamedAndRemoveUntil('/', (_) => false);
   }
 
   Future<void> loadTasks() async {
@@ -240,6 +251,11 @@ class _TaskDashboardState extends State<TaskDashboard> {
             onPressed: loadTasks,
             icon: const Icon(Icons.refresh),
             tooltip: 'Refresh tasks',
+          ),
+          IconButton(
+            onPressed: _logout,
+            icon: const Icon(Icons.logout),
+            tooltip: 'Logout',
           ),
         ],
       ),
