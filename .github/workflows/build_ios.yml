@@ -25,6 +25,11 @@ jobs:
       - name: Install Dependencies
         run: flutter pub get
 
+      - name: Configure iOS Widget Extension
+        run: |
+          gem install --no-document xcodeproj
+          ruby ios/configure_widget.rb
+
       - name: Build iOS Release (No Codesign)
         run: flutter build ios --release --no-codesign
 
