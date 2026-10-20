@@ -3,12 +3,12 @@ import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
 class TaskNotificationService {
+  static final FlutterLocalNotificationsPlugin _plugin =
+      FlutterLocalNotificationsPlugin();
+
   static Future<void> cancelReminder(int id) async {
     await _plugin.cancel(id: id);
   }
-
-  static final FlutterLocalNotificationsPlugin _plugin =
-      FlutterLocalNotificationsPlugin();
 
   static Future<void> initialize() async {
     tz_data.initializeTimeZones();
@@ -16,17 +16,33 @@ class TaskNotificationService {
 
     const settings = InitializationSettings(
       android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+      iOS: DarwinInitializationSettings(
+        requestAlertPermission: true,
+        requestBadgePermission: true,
+        requestSoundPermission: true,
+      ),
     );
 
     await _plugin.initialize(settings: settings);
 
+    // Request Android permissions
     final android = _plugin
         .resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin
         >();
-
     await android?.requestNotificationsPermission();
     await android?.requestExactAlarmsPermission();
+
+    // Request iOS permissions
+    final ios = _plugin
+        .resolvePlatformSpecificImplementation<
+          IOSFlutterLocalNotificationsPlugin
+        >();
+    await ios?.requestPermissions(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
   }
 
   static Future<void> scheduleReminder({
@@ -45,6 +61,11 @@ class TaskNotificationService {
         channelDescription: 'Reminders for your scheduled tasks',
         importance: Importance.max,
         priority: Priority.high,
+      ),
+      iOS: DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
       ),
     );
 
