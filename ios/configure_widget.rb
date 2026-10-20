@@ -75,5 +75,13 @@ embed_phase.clear
 build_file = embed_phase.add_file_reference(widget_target.product_reference, true)
 build_file.settings = { 'ATTRIBUTES' => ['RemoveHeadersOnCopy'] }
 
+# Reorder build phases: Embed Foundation Extensions MUST be placed BEFORE Thin Binary
+thin_index = runner_target.build_phases.find_index { |p| (p.respond_to?(:name) && p.name == 'Thin Binary') || (p.respond_to?(:display_name) && p.display_name == 'Thin Binary') }
+if thin_index
+  runner_target.build_phases.delete(embed_phase)
+  runner_target.build_phases.insert(thin_index, embed_phase)
+  puts "Reordered build phases: placed Embed Foundation Extensions before Thin Binary at index #{thin_index}"
+end
+
 project.save
 puts "Successfully configured TaskWidgetExtension with product name TaskWidgetExtension.appex!"
