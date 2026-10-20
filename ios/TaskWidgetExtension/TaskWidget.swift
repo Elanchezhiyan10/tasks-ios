@@ -84,6 +84,17 @@ if let date = parseISODate(scheduled), date < Date() {
         )
     }
 
+    private func parseISODate(_ iso: String) -> Date? {
+        guard !iso.isEmpty else { return nil }
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = formatter.date(from: iso) {
+            return date
+        }
+        formatter.formatOptions = [.withInternetDateTime]
+        return formatter.date(from: iso)
+    }
+
     private func formatTime(_ raw: String) -> String {
         if raw.isEmpty { return "" }
         let formatter = ISO8601DateFormatter()
@@ -109,7 +120,7 @@ struct TaskWidgetEntryView: View {
             .widgetBackground(Color(red: 0.08, green: 0.11, blue: 0.15))
     }
 
-    var content.widgetURL(URL(string: "mytasks://dashboard")!): some View {
+    var content: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Image(systemName: "checklist")
