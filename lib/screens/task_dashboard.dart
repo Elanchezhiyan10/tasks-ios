@@ -66,7 +66,7 @@ class _TaskDashboardState extends State<TaskDashboard> {
           tasks = data['tasks'] as List<dynamic>? ?? [];
         });
 
-        await TaskWidgetService.refresh();
+        await TaskWidgetService.refresh(tasks);
       } else {
         debugPrint('Tasks API status: ${response.statusCode}');
         debugPrint('Tasks API response: ${response.body}');
