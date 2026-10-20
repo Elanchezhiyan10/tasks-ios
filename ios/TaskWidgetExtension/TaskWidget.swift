@@ -165,7 +165,7 @@ struct TaskWidgetEntryView: View {
 extension View {
     @ViewBuilder
     func widgetBackground(_ backgroundView: some View) -> some View {
-        if #available(iOSApplicationExtension 17.0, iOS 17.0, *) {
+        if #available(iOS 17.0, *) {
             containerBackground(for: .widget) {
                 backgroundView
             }
