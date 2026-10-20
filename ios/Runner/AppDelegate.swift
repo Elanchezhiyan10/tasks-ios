@@ -73,7 +73,7 @@ import WidgetKit
     options: [UIApplication.OpenURLOptionsKey : Any] = [:]
   ) -> Bool {
     initialUrl = url.absoluteString
-    deepLinkChannel?.invokeMethod("onDeepLink", url.absoluteString)
+    deepLinkChannel?.invokeMethod("onDeepLink", arguments: url.absoluteString)
     return super.application(app, open: url, options: options)
   }
 }
