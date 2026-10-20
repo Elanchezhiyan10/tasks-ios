@@ -4,10 +4,17 @@ import WidgetKit
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
+  private var deepLinkChannel: FlutterMethodChannel?
+  private var initialUrl: String?
+
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
+    if let url = launchOptions?[.url] as? URL {
+      initialUrl = url.absoluteString
+    }
+
     GeneratedPluginRegistrant.register(with: self)
     let result = super.application(application, didFinishLaunchingWithOptions: launchOptions)
 
@@ -42,8 +49,31 @@ import WidgetKit
           channelResult(FlutterMethodNotImplemented)
         }
       }
+
+      let dlChannel = FlutterMethodChannel(
+        name: "com.example.flutter_pgi/deep_link",
+        binaryMessenger: controller.binaryMessenger
+      )
+      self.deepLinkChannel = dlChannel
+      dlChannel.setMethodCallHandler { [weak self] (call: FlutterMethodCall, channelResult: @escaping FlutterResult) in
+        if call.method == "getInitialUrl" {
+          channelResult(self?.initialUrl)
+        } else {
+          channelResult(FlutterMethodNotImplemented)
+        }
+      }
     }
 
     return result
+  }
+
+  override func application(
+    _ app: UIApplication,
+    open url: URL,
+    options: [UIApplication.OpenURLOptionsKey : Any] = [:]
+  ) -> Bool {
+    initialUrl = url.absoluteString
+    deepLinkChannel?.invokeMethod("onDeepLink", url.absoluteString)
+    return super.application(app, open: url, options: options)
   }
 }

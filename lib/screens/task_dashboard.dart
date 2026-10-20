@@ -42,8 +42,9 @@ class _TaskDashboardState extends State<TaskDashboard> {
     await prefs.remove('task_widget_full_name');
     await prefs.remove('task_widget_base_url');
     await prefs.remove('task_widget_tasks');
+    await TaskWidgetService.refresh([]);
     if (!mounted) return;
-    Navigator.of(context).pushNamedAndRemoveUntil('/', (_) => false);
+    Navigator.of(context).pushNamedAndRemoveUntil('/login', (_) => false);
   }
 
   Future<void> loadTasks() async {
@@ -280,6 +281,11 @@ class _TaskDashboardState extends State<TaskDashboard> {
                                 'Notifications for scheduled tasks',
                             importance: Importance.max,
                             priority: Priority.high,
+                          ),
+                          iOS: DarwinNotificationDetails(
+                            presentAlert: true,
+                            presentBadge: true,
+                            presentSound: true,
                           ),
                         ),
                       );

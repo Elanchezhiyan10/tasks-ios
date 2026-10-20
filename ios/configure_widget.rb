@@ -51,11 +51,17 @@ widget_target.build_configurations.each do |config|
   config.build_settings['CODE_SIGNING_REQUIRED'] = 'NO'
   config.build_settings['CODE_SIGN_IDENTITY'] = ''
   config.build_settings['GENERATE_INFOPLIST_KEY_CFBundleDisplayName'] = 'Task Focus'
+  config.build_settings['CODE_SIGN_ENTITLEMENTS'] = 'TaskWidgetExtension/TaskWidgetExtension.entitlements'
   config.build_settings['LD_RUNPATH_SEARCH_PATHS'] = [
     '$(inherited)',
     '@executable_path/Frameworks',
     '@executable_path/../../Frameworks'
   ]
+end
+
+# Runner build settings
+runner_target.build_configurations.each do |config|
+  config.build_settings['CODE_SIGN_ENTITLEMENTS'] = 'Runner/Runner.entitlements'
 end
 
 # Dependency on Runner

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
@@ -7,42 +8,54 @@ class TaskNotificationService {
       FlutterLocalNotificationsPlugin();
 
   static Future<void> cancelReminder(int id) async {
-    await _plugin.cancel(id: id);
+    try {
+      await _plugin.cancel(id: id);
+    } catch (e) {
+      debugPrint('Cancel reminder error: $e');
+    }
   }
 
   static Future<void> initialize() async {
-    tz_data.initializeTimeZones();
-    tz.setLocalLocation(tz.getLocation('Asia/Kolkata'));
+    try {
+      tz_data.initializeTimeZones();
+      try {
+        tz.setLocalLocation(tz.getLocation('Asia/Kolkata'));
+      } catch (_) {
+        tz.setLocalLocation(tz.local);
+      }
 
-    const settings = InitializationSettings(
-      android: AndroidInitializationSettings('@mipmap/ic_launcher'),
-      iOS: DarwinInitializationSettings(
-        requestAlertPermission: true,
-        requestBadgePermission: true,
-        requestSoundPermission: true,
-      ),
-    );
+      const settings = InitializationSettings(
+        android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+        iOS: DarwinInitializationSettings(
+          requestAlertPermission: true,
+          requestBadgePermission: true,
+          requestSoundPermission: true,
+        ),
+      );
 
-    await _plugin.initialize(settings: settings);
+      await _plugin.initialize(settings: settings);
 
-    // Request Android permissions
-    final android = _plugin
-        .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin
-        >();
-    await android?.requestNotificationsPermission();
-    await android?.requestExactAlarmsPermission();
+      // Request Android permissions
+      final android = _plugin
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
+      await android?.requestNotificationsPermission();
+      await android?.requestExactAlarmsPermission();
 
-    // Request iOS permissions
-    final ios = _plugin
-        .resolvePlatformSpecificImplementation<
-          IOSFlutterLocalNotificationsPlugin
-        >();
-    await ios?.requestPermissions(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
+      // Request iOS permissions
+      final darwin = _plugin
+          .resolvePlatformSpecificImplementation<
+            IOSFlutterLocalNotificationsPlugin
+          >();
+      await darwin?.requestPermissions(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+    } catch (e) {
+      debugPrint('TaskNotificationService initialize error: $e');
+    }
   }
 
   static Future<void> scheduleReminder({
@@ -54,28 +67,32 @@ class TaskNotificationService {
       return;
     }
 
-    const details = NotificationDetails(
-      android: AndroidNotificationDetails(
-        'task_reminders',
-        'Task reminders',
-        channelDescription: 'Reminders for your scheduled tasks',
-        importance: Importance.max,
-        priority: Priority.high,
-      ),
-      iOS: DarwinNotificationDetails(
-        presentAlert: true,
-        presentBadge: true,
-        presentSound: true,
-      ),
-    );
+    try {
+      const details = NotificationDetails(
+        android: AndroidNotificationDetails(
+          'task_reminders',
+          'Task reminders',
+          channelDescription: 'Reminders for your scheduled tasks',
+          importance: Importance.max,
+          priority: Priority.high,
+        ),
+        iOS: DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        ),
+      );
 
-    await _plugin.zonedSchedule(
-      id: id,
-      title: 'Task reminder',
-      body: title,
-      scheduledDate: tz.TZDateTime.from(reminderAt, tz.local),
-      notificationDetails: details,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-    );
+      await _plugin.zonedSchedule(
+        id: id,
+        title: 'Task reminder',
+        body: title,
+        scheduledDate: tz.TZDateTime.from(reminderAt, tz.local),
+        notificationDetails: details,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      );
+    } catch (e) {
+      debugPrint('Schedule reminder error: $e');
+    }
   }
 }

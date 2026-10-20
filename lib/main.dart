@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'screens/task_dashboard.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'services/task_notification_service.dart';
@@ -19,31 +20,164 @@ const Color borderColor = Color(0xFFE3E8EF);
 const Color successColor = Color(0xFF467766);
 const Color mutedGreen = Color(0xFFEDF5F0);
 const Color mutedRed = Color(0xFFFAEEEE);
+
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 final FlutterLocalNotificationsPlugin notificationsPlugin =
     FlutterLocalNotificationsPlugin();
+const MethodChannel _deepLinkChannel =
+    MethodChannel('com.example.flutter_pgi/deep_link');
+
+void _setupDeepLinkListener() {
+  _deepLinkChannel.setMethodCallHandler((call) async {
+    if (call.method == 'onDeepLink') {
+      final String? url = call.arguments as String?;
+      if (url != null && (url.contains('dashboard') || url.contains('mytasks'))) {
+        await _navigateToDashboardIfLoggedIn();
+      }
+    }
+  });
+}
+
+Future<void> _navigateToDashboardIfLoggedIn() async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('task_widget_token');
+    final fullName = prefs.getString('task_widget_full_name') ?? 'Employee';
+    if (token != null && token.isNotEmpty) {
+      navigatorKey.currentState?.pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (_) => TaskDashboard(token: token, fullName: fullName),
+        ),
+        (_) => false,
+      );
+    }
+  } catch (e) {
+    debugPrint('Navigation to dashboard error: $e');
+  }
+}
 
 Future<void> initializeNotifications() async {
-  const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+  try {
+    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const darwinSettings = DarwinInitializationSettings(
+      requestAlertPermission: true,
+      requestBadgePermission: true,
+      requestSoundPermission: true,
+    );
 
-  const settings = InitializationSettings(android: androidSettings);
+    const settings = InitializationSettings(
+      android: androidSettings,
+      iOS: darwinSettings,
+    );
 
-  await notificationsPlugin.initialize(settings: settings);
+    await notificationsPlugin.initialize(settings: settings);
 
-  final androidPlugin = notificationsPlugin
-      .resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin
-      >();
+    final androidPlugin = notificationsPlugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+    await androidPlugin?.requestNotificationsPermission();
 
-  await androidPlugin?.requestNotificationsPermission();
+    final darwinPlugin = notificationsPlugin
+        .resolvePlatformSpecificImplementation<
+          IOSFlutterLocalNotificationsPlugin
+        >();
+    await darwinPlugin?.requestPermissions(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+  } catch (e) {
+    debugPrint('Notifications init error: $e');
+  }
 }
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await initializeNotifications();
-  await TaskNotificationService.initialize();
+  try {
+    await initializeNotifications();
+  } catch (e) {
+    debugPrint('initializeNotifications error: $e');
+  }
+
+  try {
+    await TaskNotificationService.initialize();
+  } catch (e) {
+    debugPrint('TaskNotificationService error: $e');
+  }
+
+  try {
+    _setupDeepLinkListener();
+  } catch (e) {
+    debugPrint('setupDeepLinkListener error: $e');
+  }
 
   runApp(const AttendanceApp());
+}
+
+class AppEntryPoint extends StatefulWidget {
+  const AppEntryPoint({super.key});
+
+  @override
+  State<AppEntryPoint> createState() => _AppEntryPointState();
+}
+
+class _AppEntryPointState extends State<AppEntryPoint> {
+  bool _loading = true;
+  String? _token;
+  String _fullName = 'Employee';
+
+  @override
+  void initState() {
+    super.initState();
+    _checkInitialState();
+  }
+
+  Future<void> _checkInitialState() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('task_widget_token');
+      final fullName = prefs.getString('task_widget_full_name') ?? 'Employee';
+
+      try {
+        final initialUrl =
+            await _deepLinkChannel.invokeMethod<String>('getInitialUrl');
+        debugPrint('Initial deep link URL: $initialUrl');
+      } catch (_) {}
+
+      if (mounted) {
+        setState(() {
+          _token = (token != null && token.isNotEmpty) ? token : null;
+          _fullName = fullName;
+          _loading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Initial state check error: $e');
+      if (mounted) {
+        setState(() => _loading = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) {
+      return const Scaffold(
+        backgroundColor: backgroundColor,
+        body: Center(
+          child: CircularProgressIndicator(color: primaryColor),
+        ),
+      );
+    }
+
+    if (_token != null) {
+      return TaskDashboard(token: _token!, fullName: _fullName);
+    }
+
+    return const LoginScreen();
+  }
 }
 
 class AttendanceApp extends StatelessWidget {
@@ -52,6 +186,7 @@ class AttendanceApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey,
       debugShowCheckedModeBanner: false,
       title: 'Enterprise Attendance',
       theme: ThemeData(
@@ -133,7 +268,22 @@ class AttendanceApp extends StatelessWidget {
         ),
         dividerTheme: const DividerThemeData(color: borderColor, thickness: 1),
       ),
-      home: const LoginScreen(),
+      home: const AppEntryPoint(),
+      routes: {
+        '/login': (_) => const LoginScreen(),
+      },
+      onGenerateRoute: (settings) {
+        return MaterialPageRoute(
+          builder: (_) => const AppEntryPoint(),
+          settings: settings,
+        );
+      },
+      onUnknownRoute: (settings) {
+        return MaterialPageRoute(
+          builder: (_) => const AppEntryPoint(),
+          settings: settings,
+        );
+      },
     );
   }
 }
@@ -228,10 +378,10 @@ class _LoginScreenState extends State<LoginScreen> {
           if (token == null || user == null) {
             throw Exception('The server did not return login details.');
           }
+          final fullName = user['full_name']?.toString() ?? 'Employee';
           final prefs = await SharedPreferences.getInstance();
           await prefs.setString('task_widget_token', token);
-          await prefs.setString('task_widget_base_url', baseUrl);
-          await prefs.setString('task_widget_token', token);
+          await prefs.setString('task_widget_full_name', fullName);
           await prefs.setString('task_widget_base_url', baseUrl);
 
           await TaskWidgetService.refresh();
@@ -242,7 +392,7 @@ class _LoginScreenState extends State<LoginScreen> {
             MaterialPageRoute(
               builder: (_) => TaskDashboard(
                 token: token,
-                fullName: user['full_name']?.toString() ?? 'Employee',
+                fullName: fullName,
               ),
             ),
           );
