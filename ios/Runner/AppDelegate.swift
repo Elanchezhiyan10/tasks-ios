@@ -24,22 +24,19 @@ import WidgetKit
         binaryMessenger: controller.binaryMessenger
       )
 
-      widgetChannel.setMethodCallHandler { (call: FlutterMethodCall, channelResult: @escaping FlutterResult) in
+      widgetChannel.setMethodCallHandler { [weak self] (call: FlutterMethodCall, channelResult: @escaping FlutterResult) in
         if call.method == "refreshTaskWidget" {
-          let appGroup = "group.com.example.flutterPgi"
-          let defaults = UserDefaults(suiteName: appGroup) ?? UserDefaults.standard
+          var token: String?
+          var baseUrl: String?
+          var tasksJson: String?
 
           if let args = call.arguments as? [String: Any] {
-            if let token = args["token"] as? String {
-              defaults.set(token, forKey: "task_widget_token")
-            }
-            if let baseUrl = args["baseUrl"] as? String {
-              defaults.set(baseUrl, forKey: "task_widget_base_url")
-            }
-            if let tasksJson = args["tasksJson"] as? String {
-              defaults.set(tasksJson, forKey: "task_widget_tasks")
-            }
+            token = args["token"] as? String
+            baseUrl = args["baseUrl"] as? String
+            tasksJson = args["tasksJson"] as? String
           }
+
+          self?.saveToSharedStorage(token: token, baseUrl: baseUrl, tasksJson: tasksJson)
 
           if #available(iOS 14.0, *) {
             WidgetCenter.shared.reloadAllTimelines()
@@ -65,6 +62,50 @@ import WidgetKit
     }
 
     return result
+  }
+
+  private func getAppGroupCandidates() -> [String] {
+    var candidates = ["group.com.example.flutterPgi"]
+    if let bundleId = Bundle.main.bundleIdentifier {
+      let base = bundleId.replacingOccurrences(of: ".TaskWidgetExtension", with: "")
+      candidates.append("group.\(base)")
+      let parts = base.split(separator: ".")
+      if let last = parts.last, last.count >= 8 {
+        candidates.append("group.com.example.flutterPgi.\(last)")
+      }
+    }
+    return candidates
+  }
+
+  private func saveToSharedStorage(token: String?, baseUrl: String?, tasksJson: String?) {
+    let candidates = getAppGroupCandidates()
+
+    for group in candidates {
+      if let defaults = UserDefaults(suiteName: group) {
+        if let token = token { defaults.set(token, forKey: "task_widget_token") }
+        if let baseUrl = baseUrl { defaults.set(baseUrl, forKey: "task_widget_base_url") }
+        if let tasksJson = tasksJson { defaults.set(tasksJson, forKey: "task_widget_tasks") }
+        defaults.synchronize()
+      }
+
+      if let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: group) {
+        if let tasksJson = tasksJson {
+          let fileURL = containerURL.appendingPathComponent("tasks.json")
+          try? tasksJson.write(to: fileURL, atomically: true, encoding: .utf8)
+        }
+        if let token = token {
+          let fileURL = containerURL.appendingPathComponent("token.txt")
+          try? token.write(to: fileURL, atomically: true, encoding: .utf8)
+        }
+      }
+    }
+
+    // Also persist to standard UserDefaults
+    let standard = UserDefaults.standard
+    if let token = token { standard.set(token, forKey: "task_widget_token") }
+    if let baseUrl = baseUrl { standard.set(baseUrl, forKey: "task_widget_base_url") }
+    if let tasksJson = tasksJson { standard.set(tasksJson, forKey: "task_widget_tasks") }
+    standard.synchronize()
   }
 
   override func application(

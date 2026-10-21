@@ -20,7 +20,14 @@ class TaskWidgetService {
       };
 
       if (tasksList != null) {
-        payload['tasksJson'] = jsonEncode(tasksList);
+        final jsonStr = jsonEncode(tasksList);
+        await prefs.setString('task_widget_tasks', jsonStr);
+        payload['tasksJson'] = jsonStr;
+      } else {
+        final cached = prefs.getString('task_widget_tasks');
+        if (cached != null && cached.isNotEmpty) {
+          payload['tasksJson'] = cached;
+        }
       }
 
       await _channel.invokeMethod('refreshTaskWidget', payload);
