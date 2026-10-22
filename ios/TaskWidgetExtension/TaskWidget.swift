@@ -279,16 +279,16 @@ struct TaskWidgetEntryView: View {
 
     var body: some View {
         content.widgetURL(URL(string: "mytasks://dashboard")!)
-            .widgetBackground(Color(red: 0.08, green: 0.11, blue: 0.15))
+            .widgetBackground(Color(red: 15.0/255.0, green: 23.0/255.0, blue: 42.0/255.0))
     }
 
     var content: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Image(systemName: "checklist")
-                    .foregroundColor(.blue)
+                    .foregroundColor(Color(red: 96.0/255.0, green: 165.0/255.0, blue: 250.0/255.0))
                     .font(.system(size: 13, weight: .bold))
-                Text("TASK FOCUS")
+                Text("TASKS REMINDER")
                     .font(.system(size: 11, weight: .bold))
                     .foregroundColor(.white)
                 Spacer()

@@ -11,27 +11,29 @@ import 'services/task_widget_service.dart';
 // Keep this URL for your current Chrome development setup.
 const String baseUrl = 'https://tasks-reminder.onrender.com';
 
-const Color primaryColor = Color(0xFF34465E);
-const Color backgroundColor = Color(0xFFF5F7FA);
-const Color surfaceColor = Color(0xFFFFFFFF);
-const Color textColor = Color(0xFF253247);
-const Color secondaryTextColor = Color(0xFF778397);
-const Color borderColor = Color(0xFFE3E8EF);
-const Color successColor = Color(0xFF467766);
-const Color mutedGreen = Color(0xFFEDF5F0);
-const Color mutedRed = Color(0xFFFAEEEE);
+const Color primaryColor = Color(0xFF60A5FA);
+const Color backgroundColor = Color(0xFF0F172A);
+const Color surfaceColor = Color(0xFF1E293B);
+const Color textColor = Color(0xFFF8FAFC);
+const Color secondaryTextColor = Color(0xFF94A3B8);
+const Color borderColor = Color(0xFF334155);
+const Color successColor = Color(0xFF34D399);
+const Color mutedGreen = Color(0xFF12352F);
+const Color mutedRed = Color(0xFF451F2A);
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 final FlutterLocalNotificationsPlugin notificationsPlugin =
     FlutterLocalNotificationsPlugin();
-const MethodChannel _deepLinkChannel =
-    MethodChannel('com.example.flutter_pgi/deep_link');
+const MethodChannel _deepLinkChannel = MethodChannel(
+  'com.example.flutter_pgi/deep_link',
+);
 
 void _setupDeepLinkListener() {
   _deepLinkChannel.setMethodCallHandler((call) async {
     if (call.method == 'onDeepLink') {
       final String? url = call.arguments as String?;
-      if (url != null && (url.contains('dashboard') || url.contains('mytasks'))) {
+      if (url != null &&
+          (url.contains('dashboard') || url.contains('mytasks'))) {
         await _navigateToDashboardIfLoggedIn();
       }
     }
@@ -58,7 +60,9 @@ Future<void> _navigateToDashboardIfLoggedIn() async {
 
 Future<void> initializeNotifications() async {
   try {
-    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const androidSettings = AndroidInitializationSettings(
+      '@mipmap/ic_launcher',
+    );
     const darwinSettings = DarwinInitializationSettings(
       requestAlertPermission: true,
       requestBadgePermission: true,
@@ -141,8 +145,9 @@ class _AppEntryPointState extends State<AppEntryPoint> {
       final fullName = prefs.getString('task_widget_full_name') ?? 'Employee';
 
       try {
-        final initialUrl =
-            await _deepLinkChannel.invokeMethod<String>('getInitialUrl');
+        final initialUrl = await _deepLinkChannel.invokeMethod<String>(
+          'getInitialUrl',
+        );
         debugPrint('Initial deep link URL: $initialUrl');
       } catch (_) {}
 
@@ -166,9 +171,7 @@ class _AppEntryPointState extends State<AppEntryPoint> {
     if (_loading) {
       return const Scaffold(
         backgroundColor: backgroundColor,
-        body: Center(
-          child: CircularProgressIndicator(color: primaryColor),
-        ),
+        body: Center(child: CircularProgressIndicator(color: primaryColor)),
       );
     }
 
@@ -188,32 +191,40 @@ class AttendanceApp extends StatelessWidget {
     return MaterialApp(
       navigatorKey: navigatorKey,
       debugShowCheckedModeBanner: false,
-      title: 'Enterprise Attendance',
+      title: 'Tasks Reminder',
       theme: ThemeData(
         useMaterial3: true,
+        brightness: Brightness.dark,
         scaffoldBackgroundColor: backgroundColor,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: primaryColor,
+        canvasColor: surfaceColor,
+        dialogTheme: const DialogThemeData(backgroundColor: surfaceColor),
+        cardColor: surfaceColor,
+        colorScheme: const ColorScheme.dark(
           primary: primaryColor,
           surface: surfaceColor,
+          onSurface: textColor,
+          onPrimary: Color(0xFF0F172A),
+          error: Color(0xFFF87171),
         ),
         fontFamily: 'Roboto',
         appBarTheme: const AppBarTheme(
-          backgroundColor: surfaceColor,
+          backgroundColor: backgroundColor,
           foregroundColor: textColor,
           elevation: 0,
           centerTitle: false,
           surfaceTintColor: Colors.transparent,
+          iconTheme: IconThemeData(color: textColor),
         ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
-          fillColor: const Color(0xFFFAFBFC),
+          fillColor: const Color(0xFF0F172A),
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,
             vertical: 17,
           ),
           labelStyle: const TextStyle(color: secondaryTextColor, fontSize: 14),
           prefixIconColor: secondaryTextColor,
+          suffixIconColor: secondaryTextColor,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(color: borderColor),
@@ -224,23 +235,21 @@ class AttendanceApp extends StatelessWidget {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: primaryColor, width: 1.4),
+            borderSide: const BorderSide(color: primaryColor, width: 1.5),
           ),
           errorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Colors.redAccent),
+            borderSide: const BorderSide(color: Color(0xFFF87171)),
           ),
           focusedErrorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Colors.redAccent),
+            borderSide: const BorderSide(color: Color(0xFFF87171), width: 1.5),
           ),
         ),
         filledButtonTheme: FilledButtonThemeData(
           style: FilledButton.styleFrom(
             backgroundColor: primaryColor,
-            foregroundColor: Colors.white,
-            disabledBackgroundColor: const Color(0xFFE5E9EF),
-            disabledForegroundColor: secondaryTextColor,
+            foregroundColor: const Color(0xFF0F172A),
             minimumSize: const Size.fromHeight(50),
             elevation: 0,
             shape: RoundedRectangleBorder(
@@ -248,7 +257,7 @@ class AttendanceApp extends StatelessWidget {
             ),
             textStyle: const TextStyle(
               fontSize: 15,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ),
@@ -266,12 +275,26 @@ class AttendanceApp extends StatelessWidget {
             ),
           ),
         ),
+        textButtonTheme: TextButtonThemeData(
+          style: TextButton.styleFrom(foregroundColor: primaryColor),
+        ),
+        chipTheme: ChipThemeData(
+          backgroundColor: surfaceColor,
+          selectedColor: primaryColor.withValues(alpha: 0.25),
+          secondarySelectedColor: primaryColor.withValues(alpha: 0.25),
+          checkmarkColor: primaryColor,
+          side: const BorderSide(color: borderColor),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          labelStyle: const TextStyle(color: textColor, fontSize: 13),
+          secondaryLabelStyle: const TextStyle(
+            color: primaryColor,
+            fontSize: 13,
+          ),
+        ),
         dividerTheme: const DividerThemeData(color: borderColor, thickness: 1),
       ),
       home: const AppEntryPoint(),
-      routes: {
-        '/login': (_) => const LoginScreen(),
-      },
+      routes: {'/login': (_) => const LoginScreen()},
       onGenerateRoute: (settings) {
         return MaterialPageRoute(
           builder: (_) => const AppEntryPoint(),
@@ -359,7 +382,7 @@ class _LoginScreenState extends State<LoginScreen> {
             data = decoded;
           }
         } catch (_) {
-          debugPrint('Invalid server response: ${response.body}');
+          debugPrint('Invalid server response: ');
         }
       }
 
@@ -390,10 +413,7 @@ class _LoginScreenState extends State<LoginScreen> {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (_) => TaskDashboard(
-                token: token,
-                fullName: fullName,
-              ),
+              builder: (_) => TaskDashboard(token: token, fullName: fullName),
             ),
           );
         }
@@ -411,7 +431,7 @@ class _LoginScreenState extends State<LoginScreen> {
         messageIsSuccess = false;
       });
 
-      debugPrint('Authentication error: $error');
+      debugPrint('Authentication error: ');
     } finally {
       if (mounted) setState(() => isLoading = false);
     }
@@ -420,6 +440,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: backgroundColor,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -434,16 +455,30 @@ class _LoginScreenState extends State<LoginScreen> {
                   // Brand header
                   Center(
                     child: Container(
-                      width: 68,
-                      height: 68,
+                      width: 76,
+                      height: 76,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFEAF0F6),
-                        borderRadius: BorderRadius.circular(20),
+                        color: surfaceColor,
+                        borderRadius: BorderRadius.circular(22),
+                        border: Border.all(color: borderColor),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.25),
+                            blurRadius: 16,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
                       ),
-                      child: const Icon(
-                        Icons.access_time_rounded,
-                        size: 34,
-                        color: primaryColor,
+                      clipBehavior: Clip.antiAlias,
+                      child: Image.asset(
+                        'assets/images/task_reminder_logo.png',
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) =>
+                            const Icon(
+                              Icons.access_time_rounded,
+                              size: 38,
+                              color: primaryColor,
+                            ),
                       ),
                     ),
                   ),
@@ -451,10 +486,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 22),
 
                   const Text(
-                    'Enterprise Attendance',
+                    'Tasks Reminder',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 25,
+                      fontSize: 26,
                       fontWeight: FontWeight.w700,
                       color: textColor,
                       letterSpacing: -0.6,
@@ -486,7 +521,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       border: Border.all(color: borderColor),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.025),
+                          color: Colors.black.withValues(alpha: 0.2),
                           blurRadius: 24,
                           offset: const Offset(0, 8),
                         ),
@@ -567,6 +602,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           TextFormField(
                             controller: _password,
                             obscureText: hidePassword,
+                            style: const TextStyle(color: textColor),
                             decoration: InputDecoration(
                               labelText: 'Password',
                               prefixIcon: const Icon(
@@ -618,7 +654,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     height: 22,
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
-                                      color: primaryColor,
+                                      color: Color(0xFF0F172A),
                                     ),
                                   )
                                 : Text(
@@ -697,6 +733,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
+      style: const TextStyle(color: textColor),
       decoration: InputDecoration(labelText: label, prefixIcon: Icon(icon)),
       validator: validator,
     );
@@ -1506,7 +1543,7 @@ class _MessageBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isSuccess ? successColor : const Color(0xFF9D4848);
+    final color = isSuccess ? successColor : const Color(0xFFF87171);
     final background = isSuccess ? mutedGreen : mutedRed;
 
     return Container(
@@ -1514,6 +1551,7 @@ class _MessageBanner extends StatelessWidget {
       decoration: BoxDecoration(
         color: background,
         borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,

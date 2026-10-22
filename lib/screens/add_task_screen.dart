@@ -401,6 +401,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
             const SizedBox(height: 10),
 
             DropdownButtonFormField<String>(
+              dropdownColor: const Color(0xFF1E293B),
               initialValue: priority,
               decoration: const InputDecoration(border: OutlineInputBorder()),
               items: const [
@@ -450,6 +451,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
             const SizedBox(height: 10),
 
             DropdownButtonFormField<String>(
+              dropdownColor: const Color(0xFF1E293B),
               initialValue: recurrenceFrequency,
               decoration: const InputDecoration(
                 labelText: 'Repeat frequency',
@@ -474,6 +476,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               const SizedBox(height: 12),
 
               DropdownButtonFormField<int>(
+                dropdownColor: const Color(0xFF1E293B),
                 initialValue: recurrenceInterval,
                 decoration: const InputDecoration(
                   labelText: 'Repeat every',

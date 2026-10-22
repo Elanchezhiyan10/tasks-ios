@@ -48,11 +48,7 @@ class TaskNotificationService {
           .resolvePlatformSpecificImplementation<
             IOSFlutterLocalNotificationsPlugin
           >();
-      await darwin?.requestPermissions(
-        alert: true,
-        badge: true,
-        sound: true,
-      );
+      await darwin?.requestPermissions(alert: true, badge: true, sound: true);
     } catch (e) {
       debugPrint('TaskNotificationService initialize error: $e');
     }
